@@ -22,6 +22,17 @@ The most convenient entry point is `fmrismooth_default()`, which infers reasonab
 
 ```{r}
 library(fmrismooth)
+library(ggplot2)
+
+# helper to build a data.frame for a spatial slice (4D)
+slice_df4d <- function(arr, z, t, label) {
+  stopifnot(length(dim(arr)) == 4L)
+  nx <- dim(arr)[1]; ny <- dim(arr)[2]
+  df <- expand.grid(x = seq_len(nx), y = seq_len(ny))
+  df$val <- as.vector(arr[,,z,t])
+  df$method <- label
+  df
+}
 
 dims <- c(8, 8, 8, 12)
 clean <- array(100, dim = dims)
@@ -32,6 +43,21 @@ smoothed <- smooth_auto(noisy, robust = "none", auto_params = TRUE)
 
 c(var_original = var(as.vector(noisy)),
   var_smoothed  = var(as.vector(smoothed)))
+
+# visualize mid-slice of a mid-frame
+zmid <- ceiling(dims[3]/2); tmid <- ceiling(dims[4]/2)
+viz <- rbind(
+  slice_df4d(noisy, zmid, tmid, "noisy"),
+  slice_df4d(smoothed, zmid, tmid, "smoothed")
+)
+ggplot(viz, aes(x, y, fill = val)) +
+  geom_raster() +
+  scale_fill_gradient(low = "black", high = "white") +
+  coord_fixed() +
+  scale_y_reverse() +
+  facet_wrap(~method) +
+  theme_minimal(base_size = 10) +
+  labs(title = "Mid-slice, mid-frame", x = NULL, y = NULL, fill = "intensity")
 ```
 
 The default pipeline estimates spatial/temporal bandwidths and noise scale from the data, then applies design‑aware joint bilateral smoothing across space and time. If you have a T1 or probability maps, pass them as guides; otherwise the spatial mean of the current estimate serves as a weak guide.

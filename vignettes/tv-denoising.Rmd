@@ -13,6 +13,15 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 set.seed(1)
 library(fmrismooth)
+library(ggplot2)
+
+slice_df4d <- function(arr, z, t, label) {
+  nx <- dim(arr)[1]; ny <- dim(arr)[2]
+  df <- expand.grid(x = seq_len(nx), y = seq_len(ny))
+  df$val <- as.vector(arr[,,z,t])
+  df$method <- label
+  df
+}
 ```
 
 Total variation (TV) denoising assumes the underlying image is piecewise smooth and penalizes the sum of absolute gradients. In space–time fMRI, this preserves edges while reducing high‑frequency noise across both spatial and temporal axes.
@@ -37,7 +46,16 @@ tv_strong   <- tv_denoise4d(noisy, lambda_s = 0.9, lambda_t = 0.35, iters = 20L)
 c(var_noisy   = var(as.vector(noisy)),
   var_mod     = var(as.vector(tv_moderate)),
   var_strong  = var(as.vector(tv_strong)))
+
+zmid <- ceiling(d4[3]/2); tmid <- ceiling(d4[4]/2)
+viz <- rbind(
+  slice_df4d(noisy, zmid, tmid, "noisy"),
+  slice_df4d(tv_moderate, zmid, tmid, "TV moderate"),
+  slice_df4d(tv_strong, zmid, tmid, "TV strong")
+)
+ggplot(viz, aes(x, y, fill = val)) + geom_raster() + coord_fixed() + scale_y_reverse() +
+  scale_fill_gradient(low = "black", high = "white") + facet_wrap(~method) + theme_minimal(base_size = 10) +
+  labs(title = "TV denoising: mid-slice/frame", x = NULL, y = NULL, fill = "intensity")
 ```
 
 TV excels when you want aggressive noise reduction with crisp boundaries. If small features are oversmoothed, reduce `lambda_s` and/or `lambda_t`, or try a bilateral or guided filter.
-

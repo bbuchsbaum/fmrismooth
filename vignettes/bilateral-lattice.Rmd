@@ -13,6 +13,25 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 set.seed(1)
 library(fmrismooth)
+library(ggplot2)
+
+# helpers for slice visualization
+slice_df3d <- function(arr, z, label) {
+  stopifnot(length(dim(arr)) == 3L)
+  nx <- dim(arr)[1]; ny <- dim(arr)[2]
+  df <- expand.grid(x = seq_len(nx), y = seq_len(ny))
+  df$val <- as.vector(arr[,,z])
+  df$method <- label
+  df
+}
+slice_df4d <- function(arr, z, t, label) {
+  stopifnot(length(dim(arr)) == 4L)
+  nx <- dim(arr)[1]; ny <- dim(arr)[2]
+  df <- expand.grid(x = seq_len(nx), y = seq_len(ny))
+  df$val <- as.vector(arr[,,z,t])
+  df$method <- label
+  df
+}
 ```
 
 The bilateral filter smooths noise while respecting image edges. It does so by averaging neighboring voxels that are close in space and similar in intensity according to a guide image. Implementations based on the permutohedral lattice embed spatial and range features in a high‑dimensional lattice, then perform fast splat–blur–slice operations.
@@ -45,6 +64,19 @@ out3d_edgey <- bilat_lattice3d(noisy3d, sigma_sp = 2.0, sigma_r = 4)
 c(var_noisy   = var(as.vector(noisy3d)),
   var_soft    = var(as.vector(out3d_soft)),
   var_edgey   = var(as.vector(out3d_edgey)))
+
+# visualize a central slice
+zmid <- ceiling(d3[3]/2)
+viz3 <- rbind(
+  slice_df3d(noisy3d, zmid, "noisy"),
+  slice_df3d(out3d_soft, zmid, "sigma_r=12"),
+  slice_df3d(out3d_edgey, zmid, "sigma_r=4")
+)
+ggplot(viz3, aes(x, y, fill = val)) +
+  geom_raster() + coord_fixed() + scale_y_reverse() +
+  scale_fill_gradient(low = "black", high = "white") +
+  facet_wrap(~method) + theme_minimal(base_size = 10) +
+  labs(title = "3D: effect of sigma_r on a mid-slice", x = NULL, y = NULL, fill = "intensity")
 ```
 
 The smaller `sigma_r` preserves edges more aggressively at the cost of less denoising across intensity transitions.
@@ -62,6 +94,19 @@ out_spat_temp <- bilat_lattice4d(noisy4d, sigma_sp = 2.0, sigma_t = 0.6, sigma_r
 
 c(var_spat_only = var(as.vector(out_spat_only)),
   var_spat_temp = var(as.vector(out_spat_temp)))
+
+# visualize a central slice of a central frame
+zmid <- ceiling(d4[3]/2); tmid <- ceiling(d4[4]/2)
+viz4 <- rbind(
+  slice_df4d(noisy4d, zmid, tmid, "noisy"),
+  slice_df4d(out_spat_only, zmid, tmid, "sigma_t=0.0"),
+  slice_df4d(out_spat_temp, zmid, tmid, "sigma_t=0.6")
+)
+ggplot(viz4, aes(x, y, fill = val)) +
+  geom_raster() + coord_fixed() + scale_y_reverse() +
+  scale_fill_gradient(low = "black", high = "white") +
+  facet_wrap(~method) + theme_minimal(base_size = 10) +
+  labs(title = "4D: temporal coupling on a mid-slice/frame", x = NULL, y = NULL, fill = "intensity")
 ```
 
 Increasing `sigma_t` introduces gentle temporal smoothing that can improve SNR if the signal is temporally coherent.
@@ -80,4 +125,3 @@ all.equal(dim(out_design), d4)
 ## Practical tips
 
 Start with `sigma_sp` around 2–3 voxels and `sigma_r` comparable to the noise scale. Add a small `sigma_t` (0.3–0.8) for 4D data. Use a higher `sigma_r` if you want stronger denoising with some edge rounding, and a lower one if preserving boundaries is critical.
-

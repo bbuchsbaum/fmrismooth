@@ -13,6 +13,15 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 set.seed(1)
 library(fmrismooth)
+library(ggplot2)
+
+slice_df4d <- function(arr, z, t, label) {
+  nx <- dim(arr)[1]; ny <- dim(arr)[2]
+  df <- expand.grid(x = seq_len(nx), y = seq_len(ny))
+  df$val <- as.vector(arr[,,z,t])
+  df$method <- label
+  df
+}
 ```
 
 Robust losses tolerate outliers better than the standard squared error. In fMRI, spikes or motion corruption can bias classical TV. The Huber loss behaves quadratically for small residuals and linearly for large ones; Tukey’s biweight further down‑weights extreme outliers.
@@ -37,7 +46,17 @@ rob_tukey <- tv_robust4d(base, loss = "tukey", iters = 20L)
 
 c(var_huber = var(as.vector(rob_huber)),
   var_tukey = var(as.vector(rob_tukey)))
+
+# visualize the frame containing the outlier, mid-slice
+zmid <- ceiling(d4[3]/2); t_spike <- 5
+viz <- rbind(
+  slice_df4d(base, zmid, t_spike, "noisy+outlier"),
+  slice_df4d(rob_huber, zmid, t_spike, "Huber"),
+  slice_df4d(rob_tukey, zmid, t_spike, "Tukey")
+)
+ggplot(viz, aes(x, y, fill = val)) + geom_raster() + coord_fixed() + scale_y_reverse() +
+  scale_fill_gradient(low = "black", high = "white") + facet_wrap(~method) + theme_minimal(base_size = 10) +
+  labs(title = "Robust TV on an outlier frame (mid-slice)", x = NULL, y = NULL, fill = "intensity")
 ```
 
 The robust losses reduce the influence of isolated spikes relative to standard TV. When artifacts correlate with motion, supplying `motion_params` improves temporal selectivity.
-

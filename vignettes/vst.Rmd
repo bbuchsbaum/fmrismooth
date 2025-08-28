@@ -13,6 +13,15 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 set.seed(1)
 library(fmrismooth)
+library(ggplot2)
+
+slice_df4d <- function(arr, z, t, label) {
+  nx <- dim(arr)[1]; ny <- dim(arr)[2]
+  df <- expand.grid(x = seq_len(nx), y = seq_len(ny))
+  df$val <- as.vector(arr[,,z,t])
+  df$method <- label
+  df
+}
 ```
 
 Magnitude MR data follows a Rician distribution. At moderate SNR, the noise variance depends on the underlying signal, which complicates denoising methods designed for additive Gaussian noise. A simple strategy is to apply a variance–stabilizing transform (VST), denoise under a Gaussian assumption, then invert the transform.
@@ -57,6 +66,16 @@ out_tv <- vst_denoise(
 c(var_noisy = var(as.vector(noisy)),
   var_bilat = var(as.vector(out_bilat)),
   var_tv    = var(as.vector(out_tv)))
+
+zmid <- ceiling(d4[3]/2); tmid <- ceiling(d4[4]/2)
+viz <- rbind(
+  slice_df4d(noisy, zmid, tmid, "noisy (magnitude)"),
+  slice_df4d(out_bilat, zmid, tmid, "VST + bilat_lattice4d"),
+  slice_df4d(out_tv, zmid, tmid, "VST + tv_denoise4d")
+)
+ggplot(viz, aes(x, y, fill = val)) + geom_raster() + coord_fixed() + scale_y_reverse() +
+  scale_fill_gradient(low = "black", high = "white") + facet_wrap(~method) + theme_minimal(base_size = 10) +
+  labs(title = "VST-based denoising: mid-slice/frame", x = NULL, y = NULL, fill = "intensity")
 ```
 
 You can also pass an anonymous function if you prefer to pre‑bind certain arguments:
@@ -95,6 +114,16 @@ d3 <- c(10, 10, 10)
 vol <- array(100, dim = d3) + array(rnorm(prod(d3), sd = 2), dim = d3)
 out3d <- vst_denoise(vol, sigma = 2.0, denoise_fun = bilat_lattice3d, sigma_sp = 2.0, sigma_r = 8)
 all.equal(dim(out3d), d3)
+
+# visualize 3D mid-slice
+zmid <- ceiling(d3[3]/2)
+viz3 <- rbind(
+  transform(expand.grid(x = seq_len(d3[1]), y = seq_len(d3[2])), val = as.vector(vol[,,zmid]), method = "noisy"),
+  transform(expand.grid(x = seq_len(d3[1]), y = seq_len(d3[2])), val = as.vector(out3d[,,zmid]), method = "VST + bilat_lattice3d")
+)
+ggplot(viz3, aes(x, y, fill = val)) + geom_raster() + coord_fixed() + scale_y_reverse() +
+  scale_fill_gradient(low = "black", high = "white") + facet_wrap(~method) + theme_minimal(base_size = 10) +
+  labs(title = "VST-based denoising (3D)", x = NULL, y = NULL, fill = "intensity")
 ```
 
 ### When to use VST

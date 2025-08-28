@@ -13,6 +13,22 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 set.seed(1)
 library(fmrismooth)
+library(ggplot2)
+
+slice_df3d <- function(arr, z, label) {
+  nx <- dim(arr)[1]; ny <- dim(arr)[2]
+  df <- expand.grid(x = seq_len(nx), y = seq_len(ny))
+  df$val <- as.vector(arr[,,z])
+  df$method <- label
+  df
+}
+slice_df4d <- function(arr, z, t, label) {
+  nx <- dim(arr)[1]; ny <- dim(arr)[2]
+  df <- expand.grid(x = seq_len(nx), y = seq_len(ny))
+  df$val <- as.vector(arr[,,z,t])
+  df$method <- label
+  df
+}
 ```
 
 Guided filtering is a fast, edge‑preserving smoother. Unlike bilateral filtering, it assumes a local linear model between the output and a guide image within each window. The regularization parameter prevents overfitting across noisy regions and avoids edge leakage.
@@ -35,6 +51,16 @@ gf_rigid  <- guided_filter3d(noisy, radius = 2L, eps = 1.5^2)
 c(var_noisy = var(as.vector(noisy)),
   var_smooth = var(as.vector(gf_smooth)),
   var_rigid  = var(as.vector(gf_rigid)))
+
+zmid <- ceiling(d3[3]/2)
+viz3 <- rbind(
+  slice_df3d(noisy, zmid, "noisy"),
+  slice_df3d(gf_smooth, zmid, "eps=0.25"),
+  slice_df3d(gf_rigid, zmid, "eps=2.25")
+)
+ggplot(viz3, aes(x, y, fill = val)) + geom_raster() + coord_fixed() + scale_y_reverse() +
+  scale_fill_gradient(low = "black", high = "white") + facet_wrap(~method) + theme_minimal(base_size = 10) +
+  labs(title = "3D guided filter: mid-slice", x = NULL, y = NULL, fill = "intensity")
 ```
 
 Using the input itself as the guide is common. You can also pass an external guide, for example a T1 anatomical, to steer the filter across low‑contrast fMRI regions.
@@ -52,6 +78,16 @@ out_temp    <- guided_filter4d(x, radius_sp = 2L, eps_sp = 0.6^2, radius_t = 1L,
 
 c(var_no_temp = var(as.vector(out_no_temp)),
   var_temp    = var(as.vector(out_temp)))
+
+zmid <- ceiling(d4[3]/2); tmid <- ceiling(d4[4]/2)
+viz4 <- rbind(
+  slice_df4d(x, zmid, tmid, "noisy"),
+  slice_df4d(out_no_temp, zmid, tmid, "radius_t=0"),
+  slice_df4d(out_temp, zmid, tmid, "radius_t=1")
+)
+ggplot(viz4, aes(x, y, fill = val)) + geom_raster() + coord_fixed() + scale_y_reverse() +
+  scale_fill_gradient(low = "black", high = "white") + facet_wrap(~method) + theme_minimal(base_size = 10) +
+  labs(title = "4D guided filter: mid-slice/frame", x = NULL, y = NULL, fill = "intensity")
 ```
 
 When you have per‑frame motion parameters, supply them as `motion_params`; the filter will dampen temporal averaging across high‑motion transitions.
@@ -59,4 +95,3 @@ When you have per‑frame motion parameters, supply them as `motion_params`; the
 ## Choosing parameters
 
 Start with `radius = 2`–`3` voxels and `eps` near the noise variance. For 4D, a temporal radius of 1 with a modest `eps_t` often helps without washing out transients. If edges look washed out, reduce `eps`; if banding or over‑fitting appears, increase it.
-

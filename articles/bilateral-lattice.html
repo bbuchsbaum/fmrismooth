@@ -143,14 +143,16 @@ to approximate a wider Gaussian. Most use cases need 1–2 iterations.</p>
 <span><span class="va">vol</span><span class="op">[</span><span class="fl">6</span><span class="op">:</span><span class="fl">12</span>, , <span class="op">]</span> <span class="op">&lt;-</span> <span class="va">vol</span><span class="op">[</span><span class="fl">6</span><span class="op">:</span><span class="fl">12</span>, , <span class="op">]</span> <span class="op">+</span> <span class="fl">20</span>                    <span class="co"># a step edge</span></span>
 <span><span class="va">noisy3d</span> <span class="op">&lt;-</span> <span class="va">vol</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/prod.html" class="external-link">prod</a></span><span class="op">(</span><span class="va">d3</span><span class="op">)</span>, sd <span class="op">=</span> <span class="fl">6</span><span class="op">)</span>, dim <span class="op">=</span> <span class="va">d3</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">out3d_soft</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/bilat_lattice3d.html">bilat_lattice3d</a></span><span class="op">(</span><span class="va">noisy3d</span>, sigma_sp <span class="op">=</span> <span class="fl">2.0</span>, sigma_r <span class="op">=</span> <span class="fl">12</span><span class="op">)</span></span>
-<span><span class="va">out3d_edgey</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/bilat_lattice3d.html">bilat_lattice3d</a></span><span class="op">(</span><span class="va">noisy3d</span>, sigma_sp <span class="op">=</span> <span class="fl">2.0</span>, sigma_r <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span>
+<span><span class="co">## Note: sigma_r only has an effect if an intensity guide is provided.</span></span>
+<span><span class="co">## Using the noisy volume itself as a guide is common in practice.</span></span>
+<span><span class="va">out3d_soft</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/bilat_lattice3d.html">bilat_lattice3d</a></span><span class="op">(</span><span class="va">noisy3d</span>, sigma_sp <span class="op">=</span> <span class="fl">2.0</span>, sigma_r <span class="op">=</span> <span class="fl">12</span>, guide <span class="op">=</span> <span class="va">noisy3d</span><span class="op">)</span></span>
+<span><span class="va">out3d_edgey</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/bilat_lattice3d.html">bilat_lattice3d</a></span><span class="op">(</span><span class="va">noisy3d</span>, sigma_sp <span class="op">=</span> <span class="fl">2.0</span>, sigma_r <span class="op">=</span> <span class="fl">4</span>,  guide <span class="op">=</span> <span class="va">noisy3d</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>var_noisy   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">var</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/vector.html" class="external-link">as.vector</a></span><span class="op">(</span><span class="va">noisy3d</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  var_soft    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">var</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/vector.html" class="external-link">as.vector</a></span><span class="op">(</span><span class="va">out3d_soft</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  var_edgey   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">var</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/vector.html" class="external-link">as.vector</a></span><span class="op">(</span><span class="va">out3d_edgey</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; var_noisy  var_soft var_edgey </span></span>
-<span><span class="co">#&gt; 137.92025  56.06691  56.06691</span></span>
+<span><span class="co">#&gt; 137.92025  79.49418 116.73337</span></span>
 <span></span>
 <span><span class="co"># visualize a central slice</span></span>
 <span><span class="va">zmid</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">ceiling</a></span><span class="op">(</span><span class="va">d3</span><span class="op">[</span><span class="fl">3</span><span class="op">]</span><span class="op">/</span><span class="fl">2</span><span class="op">)</span></span>
@@ -172,7 +174,9 @@ to approximate a wider Gaussian. Most use cases need 1–2 iterations.</p>
 <span>  <span class="fu">labs</span><span class="op">(</span>title <span class="op">=</span> <span class="st">"3D: effect of sigma_r on a mid-slice"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="bilateral-lattice_files/figure-html/unnamed-chunk-1-1.png" width="840"></p>
 <p>The smaller <code>sigma_r</code> preserves edges more aggressively at
-the cost of less denoising across intensity transitions.</p>
+the cost of less denoising across intensity transitions. If no guide is
+supplied, the filter reduces to a purely spatial Gaussian smoothing and
+<code>sigma_r</code> has no effect.</p>
 </div>
 <div class="section level2">
 <h2 id="d-example-with-temporal-coupling">4D example with temporal coupling<a class="anchor" aria-label="anchor" href="#d-example-with-temporal-coupling"></a>

@@ -1,2 +1,8 @@
 ^\.claude$
 ^fmrismooth\.Rcheck$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^\.github$
+^doc$
+^Meta$

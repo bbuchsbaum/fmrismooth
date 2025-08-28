@@ -1,0 +1,124 @@
+---
+title: "Getting Started with fmrismooth"
+author: "fmrismooth authors"
+date: "`r format(Sys.Date())`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with fmrismooth}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+set.seed(1)
+```
+
+The goal of fmrismooth is to make practical, edge‑preserving smoothing and denoising easy to apply to fMRI volumes and time series. The package brings together fast lattice bilateral filters, robust and TV‑based denoisers, MP‑PCA, and simple VST wrappers, with functions that accept plain numeric arrays and optionally integrate with `neuroim2` if you work with `NeuroVol`/`NeuroVec` objects. The examples below use small synthetic arrays to keep the vignette self‑contained and fast to run.
+
+## Quick start: one‑liner pipeline
+
+The most convenient entry point is `fmrismooth_default()`, which infers reasonable parameters from the data and optionally runs a robust stage before a joint bilateral final stage.
+
+```{r}
+library(fmrismooth)
+
+dims <- c(8, 8, 8, 12)
+clean <- array(100, dim = dims)
+noisy <- clean + array(rnorm(prod(dims), sd = 4), dim = dims)
+
+# One-liner with auto-parameters and joint bilateral final stage
+smoothed <- fmrismooth_default(noisy, robust = "none", auto_params = TRUE)
+
+c(var_original = var(as.vector(noisy)),
+  var_smoothed  = var(as.vector(smoothed)))
+```
+
+The default pipeline estimates spatial/temporal bandwidths and noise scale from the data, then applies design‑aware joint bilateral smoothing across space and time. If you have a T1 or probability maps, pass them as guides; otherwise the spatial mean of the current estimate serves as a weak guide.
+
+## MP‑PCA + joint bilateral
+
+For stronger denoising while preserving structure, combine MP‑PCA with joint bilateral filtering using `fmrismooth_mppca_pipeline()`.
+
+```{r}
+mp_out <- fmrismooth_mppca_pipeline(
+  noisy,
+  sigma_mode = "global",   # estimate one sigma from temporal differences
+  sigma_sp   = 2.5,
+  sigma_t    = 0.5,
+  sigma_r    = 12,
+  lattice_blur_iters = 1L
+)
+
+c(var_original = var(as.vector(noisy)),
+  var_mppca    = var(as.vector(mp_out)))
+```
+
+This pipeline first denoises overlapping space×time patches with PCA, then smooths with a weakly temporal‑aware lattice bilateral filter. Where patches do not contribute (e.g., outside the mask), the original signal is preserved.
+
+## Joint bilateral filtering directly
+
+If you want more direct control over bandwidths and guides, call `fast_bilateral_lattice4d()` or its 3D counterpart.
+
+```{r}
+# 4D joint bilateral with explicit parameters
+jb <- fast_bilateral_lattice4d(
+  noisy,
+  sigma_sp = 2.0,
+  sigma_t  = 0.6,
+  sigma_r  = 10.0,
+  guide_spatial = NULL,   # optional 3D guide; omit for self-guided
+  guides = NULL,          # optional list of 3D guides (e.g., tissue probs)
+  design = NULL,          # optional length-T regressor for design-aware feature
+  mask = NULL             # optional 3D mask
+)
+
+all.equal(dim(jb), dims)
+```
+
+Under the hood, features are embedded in a permutohedral lattice; values are splatted to lattice vertices, blurred along simplex axes, and sliced back to the image grid. The range bandwidth `sigma_r` can be a vector when using multiple guides.
+
+## Robust and TV‑based smoothing
+
+When the goal is artifact suppression with minimal blurring, total variation methods and robust losses are often a good fit. The package exposes a straightforward TV denoiser and a robust variant.
+
+```{r}
+# Space-time TV denoising (Chambolle-Pock)
+tv <- stv_denoise4d(noisy, lambda_s = 0.6, lambda_t = 0.2, iters = 20L)
+
+# Robust variant using Huber or Tukey data terms
+rob <- stv_robust4d(noisy, loss = "huber", iters = 20L)
+
+c(var_tv = var(as.vector(tv)), var_rob = var(as.vector(rob)))
+```
+
+The spatial and temporal TV weights (`lambda_s`, `lambda_t`) trade off fidelity and smoothness; the robust version internally sets thresholds from an estimated noise scale if not provided.
+
+## Variance‑stabilizing transform wrapper
+
+Magnitude MR data is Rician‑distributed. A simple yet effective tactic is to apply a variance‑stabilizing transform (VST), denoise under an approximate Gaussian model, then invert the transform. The `vst_wrap()` helper encapsulates this pattern.
+
+```{r}
+vst_out <- vst_wrap(
+  noisy,
+  denoise_fun = function(z) fast_bilateral_lattice4d(z, sigma_sp = 2.0, sigma_t = 0.4, sigma_r = 8)
+)
+
+c(var_vst = var(as.vector(vst_out)))
+```
+
+If `sigma` is not supplied and the input is 4D, the wrapper estimates it from temporal differences in masked voxels.
+
+## Choosing parameters
+
+Sensible defaults are helpful, but you might want parameters tied to voxel size and TR. The `recommend_params()` helper looks at spacing (when available), TR, and a global noise estimate, returning a compact list you can pass into pipelines.
+
+```{r}
+rec <- recommend_params(noisy, tr = 2.0, target_fwhm_mm = 5)
+str(rec)
+
+out <- fmrismooth_default(noisy, robust = "none", auto_params = FALSE)
+```
+
+In practice, start with the default pipeline, check the variance reduction and the appearance of edges in a few slices, then refine with joint bilateral or TV methods if you need more control. All functions accept plain arrays; if you work with `neuroim2`, spatial alignment happens automatically when both the fMRI object and guides carry space metadata.
+

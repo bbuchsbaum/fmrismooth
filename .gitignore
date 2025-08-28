@@ -21,3 +21,6 @@ src/*.a
 *.swp
 *.tmp
 *.bak
+docs
+/doc/
+/Meta/

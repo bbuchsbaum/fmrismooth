@@ -73,13 +73,11 @@ test_that("vst_wrap applies denoising correctly", {
 
 test_that("vst_wrap estimates sigma when not provided", {
   set.seed(123)
-  
   # Create 4D test data
-  data_4d <- create_test_data_4d(dims = c(5, 5, 5, 10), noise_sd = 3, signal_mean = 100)
+  data_4d <- create_test_data_4d(dims = c(5, 5, 5, 10), noise_sd = 3, signal_mean = 100) # nolint: line_length_linter.
   
   # Identity denoiser
   identity_denoise <- function(x, ...) x
-  
   # Should estimate sigma automatically for 4D data
   result <- vst_wrap(data_4d, sigma = NULL, denoise_fun = identity_denoise)
   expect_equal(dim(result), dim(data_4d))

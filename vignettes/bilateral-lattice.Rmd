@@ -10,7 +10,7 @@ vignette: >
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7, fig.height = 2.6, dpi = 120)
 set.seed(1)
 library(fmrismooth)
 library(ggplot2)
@@ -73,10 +73,16 @@ viz3 <- rbind(
   slice_df3d(out3d_edgey, zmid, "sigma_r=4")
 )
 ggplot(viz3, aes(x, y, fill = val)) +
-  geom_raster() + coord_fixed() + scale_y_reverse() +
+  geom_raster() +
+  coord_equal() +
+  scale_x_continuous(expand = c(0,0), breaks = NULL) +
+  scale_y_reverse(expand = c(0,0), breaks = NULL) +
   scale_fill_gradient(low = "black", high = "white") +
-  facet_wrap(~method) + theme_minimal(base_size = 10) +
-  labs(title = "3D: effect of sigma_r on a mid-slice", x = NULL, y = NULL, fill = "intensity")
+  facet_wrap(~method, nrow = 1) +
+  guides(fill = "none") +
+  theme_minimal(base_size = 10) +
+  theme(axis.title = element_blank(), axis.text = element_blank(), panel.grid = element_blank()) +
+  labs(title = "3D: effect of sigma_r on a mid-slice")
 ```
 
 The smaller `sigma_r` preserves edges more aggressively at the cost of less denoising across intensity transitions.
@@ -103,10 +109,16 @@ viz4 <- rbind(
   slice_df4d(out_spat_temp, zmid, tmid, "sigma_t=0.6")
 )
 ggplot(viz4, aes(x, y, fill = val)) +
-  geom_raster() + coord_fixed() + scale_y_reverse() +
+  geom_raster() +
+  coord_equal() +
+  scale_x_continuous(expand = c(0,0), breaks = NULL) +
+  scale_y_reverse(expand = c(0,0), breaks = NULL) +
   scale_fill_gradient(low = "black", high = "white") +
-  facet_wrap(~method) + theme_minimal(base_size = 10) +
-  labs(title = "4D: temporal coupling on a mid-slice/frame", x = NULL, y = NULL, fill = "intensity")
+  facet_wrap(~method, nrow = 1) +
+  guides(fill = "none") +
+  theme_minimal(base_size = 10) +
+  theme(axis.title = element_blank(), axis.text = element_blank(), panel.grid = element_blank()) +
+  labs(title = "4D: temporal coupling on a mid-slice/frame")
 ```
 
 Increasing `sigma_t` introduces gentle temporal smoothing that can improve SNR if the signal is temporally coherent.

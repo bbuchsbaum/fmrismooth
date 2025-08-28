@@ -68,8 +68,10 @@ vol <- array(100, dim = d3)
 vol[6:12, , ] <- vol[6:12, , ] + 20                    # a step edge
 noisy3d <- vol + array(rnorm(prod(d3), sd = 6), dim = d3)
 
-out3d_soft  <- bilat_lattice3d(noisy3d, sigma_sp = 2.0, sigma_r = 12)
-out3d_edgey <- bilat_lattice3d(noisy3d, sigma_sp = 2.0, sigma_r = 4)
+## Note: sigma_r only has an effect if an intensity guide is provided.
+## Using the noisy volume itself as a guide is common in practice.
+out3d_soft  <- bilat_lattice3d(noisy3d, sigma_sp = 2.0, sigma_r = 12, guide = noisy3d)
+out3d_edgey <- bilat_lattice3d(noisy3d, sigma_sp = 2.0, sigma_r = 4,  guide = noisy3d)
 
 c(var_noisy   = var(as.vector(noisy3d)),
   var_soft    = var(as.vector(out3d_soft)),
@@ -95,7 +97,7 @@ ggplot(viz3, aes(x, y, fill = val)) +
   labs(title = "3D: effect of sigma_r on a mid-slice")
 ```
 
-The smaller `sigma_r` preserves edges more aggressively at the cost of less denoising across intensity transitions.
+The smaller `sigma_r` preserves edges more aggressively at the cost of less denoising across intensity transitions. If no guide is supplied, the filter reduces to a purely spatial Gaussian smoothing and `sigma_r` has no effect.
 
 ## 4D example with temporal coupling
 

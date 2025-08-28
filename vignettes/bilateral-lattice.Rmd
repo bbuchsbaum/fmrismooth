@@ -38,6 +38,16 @@ The bilateral filter smooths noise while respecting image edges. It does so by a
 
 This vignette explains how the lattice variant in `fmrismooth` works and how to set its parameters.
 
+## What is a permutohedral lattice, and why use it?
+
+A bilateral (or joint bilateral) filter performs a Gaussian blur not only in space but also in an additional “range” dimension built from intensity and other features. Doing an exact Gaussian blur in a high‑dimensional feature space on the regular grid is expensive. The permutohedral lattice is a sparse, skewed grid that tessellates feature space into simplices. It enables an efficient three‑step procedure — often called splat → blur → slice:
+
+- splat: project each voxel’s feature vector to the nearest lattice simplex and accumulate its value into the simplex vertices;
+- blur: run a small fixed‑degree Gaussian-like convolution along lattice axes (fast because the lattice is sparse and low‑degree);
+- slice: interpolate the blurred lattice values back at the original feature locations.
+
+This gives a very good approximation to a high‑dimensional Gaussian blur at a cost that is linear in the number of voxels and roughly linear in the feature dimensionality. In practice this makes joint bilateral filtering with multiple guides and optional temporal/design features fast enough for routine use on fMRI volumes.
+
 ## Intuition and features
 
 Each voxel is represented by a feature vector that always contains spatial coordinates and can include additional components. For 3D filtering, the spatial part is `(x/sigma_sp, y/sigma_sp, z/sigma_sp)`. If you provide a guide volume, its intensity contributes as `g/sigma_r`. Additional guides simply append more intensity features, each scaled by its own `sigma_r` element.

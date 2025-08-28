@@ -72,7 +72,9 @@
 
 <dt id="arg-sigma-r">sigma_r<a class="anchor" aria-label="anchor" href="#arg-sigma-r"></a></dt>
 <dd><p>Range sigma(s) for guide intensity dimensions. Scalar or
-vector matching `guide` + `guides` count.</p></dd>
+vector matching `guide` + `guides` count. Has an effect only when a
+guide (or guides) is provided; otherwise the filter is purely spatial
+and `sigma_r` is ignored.</p></dd>
 
 
 <dt id="arg-guide">guide<a class="anchor" aria-label="anchor" href="#arg-guide"></a></dt>

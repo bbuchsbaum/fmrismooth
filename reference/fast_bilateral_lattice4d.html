@@ -85,7 +85,10 @@ to the lattice features.</p>
 
 <dt id="arg-sigma-r">sigma_r<a class="anchor" aria-label="anchor" href="#arg-sigma-r"></a></dt>
 <dd><p>Range sigma(s) for guide intensity dimensions. Scalar or
-vector matching `guide_spatial` + length(`guides`).</p></dd>
+vector matching `guide_spatial` + length(`guides`). Has an effect only
+when `guide_spatial` and/or `guides` are provided; otherwise the filter
+is purely spatial (plus optional temporal/design features) and `sigma_r`
+is ignored.</p></dd>
 
 
 <dt id="arg-guide-spatial">guide_spatial<a class="anchor" aria-label="anchor" href="#arg-guide-spatial"></a></dt>

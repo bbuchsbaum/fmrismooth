@@ -132,7 +132,9 @@ robust stage before a joint bilateral final stage.</p>
 scale from the data, then applies design‑aware joint bilateral smoothing
 across space and time. If you have a T1 or probability maps, pass them
 as guides; otherwise the spatial mean of the current estimate serves as
-a weak guide.</p>
+a weak guide. Note that range smoothing (<code>sigma_r</code>) only has
+an effect when a guide (or guides) is supplied — without a guide the
+filter is purely spatial.</p>
 </div>
 <div class="section level2">
 <h2 id="mppca-joint-bilateral">MP‑PCA + joint bilateral<a class="anchor" aria-label="anchor" href="#mppca-joint-bilateral"></a>

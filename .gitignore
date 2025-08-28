@@ -1,0 +1,23 @@
+.DS_Store
+*.tar.gz
+*.Rproj
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+
+# Build outputs
+fmrismooth.Rcheck/
+man/*.Rd~
+
+# Compiled artifacts
+src/*.o
+src/*.so
+src/*.dll
+src/*.dylib
+src/*.a
+
+# Misc
+*.swp
+*.tmp
+*.bak

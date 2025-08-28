@@ -89,7 +89,7 @@ robust stage before a joint bilateral final stage.</p>
 <span><span class="va">noisy</span> <span class="op">&lt;-</span> <span class="va">clean</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/prod.html" class="external-link">prod</a></span><span class="op">(</span><span class="va">dims</span><span class="op">)</span>, sd <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>, dim <span class="op">=</span> <span class="va">dims</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># One-liner with auto-parameters and joint bilateral final stage</span></span>
-<span><span class="va">smoothed</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fmrismooth_default.html">fmrismooth_default</a></span><span class="op">(</span><span class="va">noisy</span>, robust <span class="op">=</span> <span class="st">"none"</span>, auto_params <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="va">smoothed</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/smooth_auto.html">smooth_auto</a></span><span class="op">(</span><span class="va">noisy</span>, robust <span class="op">=</span> <span class="st">"none"</span>, auto_params <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>var_original <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">var</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/vector.html" class="external-link">as.vector</a></span><span class="op">(</span><span class="va">noisy</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  var_smoothed  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">var</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/vector.html" class="external-link">as.vector</a></span><span class="op">(</span><span class="va">smoothed</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
@@ -108,7 +108,7 @@ a weak guide.</p>
 with joint bilateral filtering using
 <code><a href="../reference/fmrismooth_mppca_pipeline.html">fmrismooth_mppca_pipeline()</a></code>.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">mp_out</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fmrismooth_mppca_pipeline.html">fmrismooth_mppca_pipeline</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">mp_out</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/smooth_mppca.html">smooth_mppca</a></span><span class="op">(</span></span>
 <span>  <span class="va">noisy</span>,</span>
 <span>  sigma_mode <span class="op">=</span> <span class="st">"global"</span>,   <span class="co"># estimate one sigma from temporal differences</span></span>
 <span>  sigma_sp   <span class="op">=</span> <span class="fl">2.5</span>,</span>
@@ -133,7 +133,7 @@ signal is preserved.</p>
 <code><a href="../reference/fast_bilateral_lattice4d.html">fast_bilateral_lattice4d()</a></code> or its 3D counterpart.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 4D joint bilateral with explicit parameters</span></span>
-<span><span class="va">jb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fast_bilateral_lattice4d.html">fast_bilateral_lattice4d</a></span><span class="op">(</span></span>
+<span><span class="va">jb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/bilat_lattice4d.html">bilat_lattice4d</a></span><span class="op">(</span></span>
 <span>  <span class="va">noisy</span>,</span>
 <span>  sigma_sp <span class="op">=</span> <span class="fl">2.0</span>,</span>
 <span>  sigma_t  <span class="op">=</span> <span class="fl">0.6</span>,</span>
@@ -159,10 +159,10 @@ variation methods and robust losses are often a good fit. The package
 exposes a straightforward TV denoiser and a robust variant.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Space-time TV denoising (Chambolle-Pock)</span></span>
-<span><span class="va">tv</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stv_denoise4d.html">stv_denoise4d</a></span><span class="op">(</span><span class="va">noisy</span>, lambda_s <span class="op">=</span> <span class="fl">0.6</span>, lambda_t <span class="op">=</span> <span class="fl">0.2</span>, iters <span class="op">=</span> <span class="fl">20L</span><span class="op">)</span></span>
+<span><span class="va">tv</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tv_denoise4d.html">tv_denoise4d</a></span><span class="op">(</span><span class="va">noisy</span>, lambda_s <span class="op">=</span> <span class="fl">0.6</span>, lambda_t <span class="op">=</span> <span class="fl">0.2</span>, iters <span class="op">=</span> <span class="fl">20L</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Robust variant using Huber or Tukey data terms</span></span>
-<span><span class="va">rob</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stv_robust4d.html">stv_robust4d</a></span><span class="op">(</span><span class="va">noisy</span>, loss <span class="op">=</span> <span class="st">"huber"</span>, iters <span class="op">=</span> <span class="fl">20L</span><span class="op">)</span></span>
+<span><span class="va">rob</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tv_robust4d.html">tv_robust4d</a></span><span class="op">(</span><span class="va">noisy</span>, loss <span class="op">=</span> <span class="st">"huber"</span>, iters <span class="op">=</span> <span class="fl">20L</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>var_tv <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">var</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/vector.html" class="external-link">as.vector</a></span><span class="op">(</span><span class="va">tv</span><span class="op">)</span><span class="op">)</span>, var_rob <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">var</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/vector.html" class="external-link">as.vector</a></span><span class="op">(</span><span class="va">rob</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    var_tv   var_rob </span></span>
@@ -180,9 +180,9 @@ tactic is to apply a variance‑stabilizing transform (VST), denoise under
 an approximate Gaussian model, then invert the transform. The
 <code><a href="../reference/vst_wrap.html">vst_wrap()</a></code> helper encapsulates this pattern.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">vst_out</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vst_wrap.html">vst_wrap</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">vst_out</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vst_denoise.html">vst_denoise</a></span><span class="op">(</span></span>
 <span>  <span class="va">noisy</span>,</span>
-<span>  denoise_fun <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">z</span><span class="op">)</span> <span class="fu"><a href="../reference/fast_bilateral_lattice4d.html">fast_bilateral_lattice4d</a></span><span class="op">(</span><span class="va">z</span>, sigma_sp <span class="op">=</span> <span class="fl">2.0</span>, sigma_t <span class="op">=</span> <span class="fl">0.4</span>, sigma_r <span class="op">=</span> <span class="fl">8</span><span class="op">)</span></span>
+<span>  denoise_fun <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">z</span><span class="op">)</span> <span class="fu"><a href="../reference/bilat_lattice4d.html">bilat_lattice4d</a></span><span class="op">(</span><span class="va">z</span>, sigma_sp <span class="op">=</span> <span class="fl">2.0</span>, sigma_t <span class="op">=</span> <span class="fl">0.4</span>, sigma_r <span class="op">=</span> <span class="fl">8</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>var_vst <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">var</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/vector.html" class="external-link">as.vector</a></span><span class="op">(</span><span class="va">vst_out</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
@@ -199,7 +199,7 @@ voxel size and TR. The <code><a href="../reference/recommend_params.html">recomm
 spacing (when available), TR, and a global noise estimate, returning a
 compact list you can pass into pipelines.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">rec</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/recommend_params.html">recommend_params</a></span><span class="op">(</span><span class="va">noisy</span>, tr <span class="op">=</span> <span class="fl">2.0</span>, target_fwhm_mm <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">rec</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/suggest_params.html">suggest_params</a></span><span class="op">(</span><span class="va">noisy</span>, tr <span class="op">=</span> <span class="fl">2.0</span>, target_fwhm_mm <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">rec</span><span class="op">)</span></span>
 <span><span class="co">#&gt; List of 5</span></span>
 <span><span class="co">#&gt;  $ lambda_s: num 1.2</span></span>
@@ -208,7 +208,7 @@ compact list you can pass into pipelines.</p>
 <span><span class="co">#&gt;  $ sigma_t : num 0.5</span></span>
 <span><span class="co">#&gt;  $ sigma_r : num 5</span></span>
 <span></span>
-<span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fmrismooth_default.html">fmrismooth_default</a></span><span class="op">(</span><span class="va">noisy</span>, robust <span class="op">=</span> <span class="st">"none"</span>, auto_params <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/smooth_auto.html">smooth_auto</a></span><span class="op">(</span><span class="va">noisy</span>, robust <span class="op">=</span> <span class="st">"none"</span>, auto_params <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <p>In practice, start with the default pipeline, check the variance
 reduction and the appearance of edges in a few slices, then refine with
 joint bilateral or TV methods if you need more control. All functions

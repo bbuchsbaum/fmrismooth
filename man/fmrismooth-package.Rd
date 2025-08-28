@@ -10,6 +10,13 @@ Edge-preserving guided filters, MP-PCA, TV denoising, and lattice bilateral filt
 tailored to fMRI volumes/time-series. If 'neuroim2' is available, guides/masks are
 automatically resampled to the fMRI grid.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://bbuchsbaum.github.io/fmrismooth/}
+}
+
+}
 \author{
 \strong{Maintainer}: Your Name \email{your.email@example.com}
 

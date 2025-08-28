@@ -28,7 +28,7 @@ clean <- array(100, dim = dims)
 noisy <- clean + array(rnorm(prod(dims), sd = 4), dim = dims)
 
 # One-liner with auto-parameters and joint bilateral final stage
-smoothed <- fmrismooth_default(noisy, robust = "none", auto_params = TRUE)
+smoothed <- smooth_auto(noisy, robust = "none", auto_params = TRUE)
 
 c(var_original = var(as.vector(noisy)),
   var_smoothed  = var(as.vector(smoothed)))
@@ -41,7 +41,7 @@ The default pipeline estimates spatial/temporal bandwidths and noise scale from 
 For stronger denoising while preserving structure, combine MP‑PCA with joint bilateral filtering using `fmrismooth_mppca_pipeline()`.
 
 ```{r}
-mp_out <- fmrismooth_mppca_pipeline(
+mp_out <- smooth_mppca(
   noisy,
   sigma_mode = "global",   # estimate one sigma from temporal differences
   sigma_sp   = 2.5,
@@ -62,7 +62,7 @@ If you want more direct control over bandwidths and guides, call `fast_bilateral
 
 ```{r}
 # 4D joint bilateral with explicit parameters
-jb <- fast_bilateral_lattice4d(
+jb <- bilat_lattice4d(
   noisy,
   sigma_sp = 2.0,
   sigma_t  = 0.6,
@@ -84,10 +84,10 @@ When the goal is artifact suppression with minimal blurring, total variation met
 
 ```{r}
 # Space-time TV denoising (Chambolle-Pock)
-tv <- stv_denoise4d(noisy, lambda_s = 0.6, lambda_t = 0.2, iters = 20L)
+tv <- tv_denoise4d(noisy, lambda_s = 0.6, lambda_t = 0.2, iters = 20L)
 
 # Robust variant using Huber or Tukey data terms
-rob <- stv_robust4d(noisy, loss = "huber", iters = 20L)
+rob <- tv_robust4d(noisy, loss = "huber", iters = 20L)
 
 c(var_tv = var(as.vector(tv)), var_rob = var(as.vector(rob)))
 ```
@@ -99,9 +99,9 @@ The spatial and temporal TV weights (`lambda_s`, `lambda_t`) trade off fidelity 
 Magnitude MR data is Rician‑distributed. A simple yet effective tactic is to apply a variance‑stabilizing transform (VST), denoise under an approximate Gaussian model, then invert the transform. The `vst_wrap()` helper encapsulates this pattern.
 
 ```{r}
-vst_out <- vst_wrap(
+vst_out <- vst_denoise(
   noisy,
-  denoise_fun = function(z) fast_bilateral_lattice4d(z, sigma_sp = 2.0, sigma_t = 0.4, sigma_r = 8)
+  denoise_fun = function(z) bilat_lattice4d(z, sigma_sp = 2.0, sigma_t = 0.4, sigma_r = 8)
 )
 
 c(var_vst = var(as.vector(vst_out)))
@@ -114,11 +114,10 @@ If `sigma` is not supplied and the input is 4D, the wrapper estimates it from te
 Sensible defaults are helpful, but you might want parameters tied to voxel size and TR. The `recommend_params()` helper looks at spacing (when available), TR, and a global noise estimate, returning a compact list you can pass into pipelines.
 
 ```{r}
-rec <- recommend_params(noisy, tr = 2.0, target_fwhm_mm = 5)
+rec <- suggest_params(noisy, tr = 2.0, target_fwhm_mm = 5)
 str(rec)
 
-out <- fmrismooth_default(noisy, robust = "none", auto_params = FALSE)
+out <- smooth_auto(noisy, robust = "none", auto_params = FALSE)
 ```
 
 In practice, start with the default pipeline, check the variance reduction and the appearance of edges in a few slices, then refine with joint bilateral or TV methods if you need more control. All functions accept plain arrays; if you work with `neuroim2`, spatial alignment happens automatically when both the fMRI object and guides carry space metadata.
-

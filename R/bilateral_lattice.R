@@ -86,8 +86,16 @@ fast_bilateral_lattice4d <- function(vec,
     sr <- rep_len(sr, length(GL) + (!is.null(G1)))
   }
   if (!is.null(design)) {
-    design <- as.numeric(design)
-    if (length(design) != d[4]) stop("design must have length T (frames).")
+    if (is.matrix(design) || is.data.frame(design)) {
+      design <- as.matrix(design)
+      if (nrow(design) != d[4]) stop("design matrix must have nrow = T (frames).")
+    } else if (is.list(design)) {
+      design <- lapply(design, as.numeric)
+      if (any(vapply(design, length, 1L) != d[4])) stop("each design vector must have length T (frames).")
+    } else {
+      design <- as.numeric(design)
+      if (length(design) != d[4]) stop("design must have length T (frames).")
+    }
   }
   Y <- .Call("_fmrismooth_bilateral_lattice4d_cpp", X, m,
              as.numeric(sigma_sp), as.numeric(sigma_t), as.numeric(sr),

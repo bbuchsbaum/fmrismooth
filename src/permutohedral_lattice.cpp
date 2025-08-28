@@ -116,14 +116,21 @@ static inline void build_features_4d(int x,int y,int z,int t,
                                      int nx,int ny,int nz,int nt,
                                      const std::vector<const double*> &guides,
                                      const std::vector<double> &sigma_r,
-                                     const double *design, double sigma_d,
+                                     const std::vector<const double*> &designs,
+                                     const std::vector<double> &sigma_dv,
                                      std::vector<double> &f) {
   f.clear();
   f.push_back(x / sigma_sp);
   f.push_back(y / sigma_sp);
   f.push_back(z / sigma_sp);
   if (sigma_t > 0.0) f.push_back(t / sigma_t);
-  if (design) f.push_back( design[t] / sigma_d );
+  if (!designs.empty()) {
+    const int K = (int)designs.size();
+    for (int k=0;k<K;++k) {
+      double sd = (sigma_dv.size()>k? sigma_dv[k]: 1.0);
+      f.push_back( designs[k][t] / sd );
+    }
+  }
   int gi = 0;
   if (guide) {
     double g = guide[x + nx*(y + (size_t)ny*z)];
@@ -257,10 +264,10 @@ SEXP permutohedral_lattice4d_cpp(SEXP vec4d_, SEXP mask3_,
   NumericVector guide_nv;
   bool has_guide = !Rf_isNull(guide_spatial_);
   if (has_guide) guide_nv = as<NumericVector>(guide_spatial_);
-  double sigma_d = as<double>(sigma_d_);
-  NumericVector design_nv;
-  bool has_design = !Rf_isNull(design_);
-  if (has_design) design_nv = as<NumericVector>(design_);
+  NumericVector sigma_d_nv(sigma_d_);
+  // design can be: NULL, numeric vector (length T), numeric matrix (nrow=T), or list of numeric vectors (each length T)
+  std::vector<const double*> designs;
+  std::vector<double> sigma_dv;
   int passes = as<int>(passes_);
 
   std::vector<const double*> guides;
@@ -280,7 +287,37 @@ SEXP permutohedral_lattice4d_cpp(SEXP vec4d_, SEXP mask3_,
 
   std::vector<double> sigma_r(sigma_r_nv.begin(), sigma_r_nv.end());
   const double *guide = has_guide ? guide_nv.begin() : nullptr;
-  const double *design= has_design? design_nv.begin(): nullptr;
+
+  // Parse designs
+  if (!Rf_isNull(design_)) {
+    if (Rf_isMatrix(design_)) {
+      NumericMatrix M(design_);
+      if (M.nrow() != nt) stop("design matrix must have nrow = T (frames)");
+      for (int j=0;j<M.ncol(); ++j) designs.push_back(&M(0,j));
+    } else if (TYPEOF(design_) == VECSXP) {
+      List dl(design_);
+      for (int j=0;j<dl.size(); ++j) {
+        NumericVector v = as<NumericVector>(dl[j]);
+        if (v.size() != nt) stop("each design vector must have length T (frames)");
+        designs.push_back(v.begin());
+      }
+    } else {
+      NumericVector v(design_);
+      if (v.size() != nt) stop("design must have length T (frames)");
+      designs.push_back(v.begin());
+    }
+  }
+  if (!designs.empty()) {
+    if (sigma_d_nv.size() == 0) {
+      sigma_dv.assign(designs.size(), 1.0);
+    } else if (sigma_d_nv.size() == 1) {
+      sigma_dv.assign(designs.size(), sigma_d_nv[0]);
+    } else if ((size_t)sigma_d_nv.size() == designs.size()) {
+      sigma_dv.assign(sigma_d_nv.begin(), sigma_d_nv.end());
+    } else {
+      stop("sigma_d must be length 1 or match number of design columns");
+    }
+  }
 
   std::vector<size_t> lin_index; lin_index.reserve((size_t)nx*ny*nz*nt);
   for (int t=0;t<nt;++t)
@@ -309,7 +346,7 @@ SEXP permutohedral_lattice4d_cpp(SEXP vec4d_, SEXP mask3_,
     std::vector<const double*> gtmp = guides;
     build_features_4d(x,y,z,t, sigma_sp, sigma_t,
                       guide, nx,ny,nz, /*nt*/0,
-                      gtmp, sigma_r, design, sigma_d, f);
+                      gtmp, sigma_r, designs, sigma_dv, f);
     const int D = (int)f.size(); if (D>9) stop("Too many features (supports up to 9)");
     Dmax = std::max(Dmax, D);
 

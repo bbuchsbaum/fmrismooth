@@ -74,7 +74,7 @@ fast_bilateral_joint4d <- function(
              as.numeric(sigma_s), as.numeric(sigma_t), as.numeric(sigma_r),
              G,
              if (is.null(guides)) NULL else guides,
-             if (is.null(design)) NULL else as.numeric(design),
+             if (is.null(design)) NULL else design,
              as.numeric(sigma_d),
              as.integer(passes),
              PACKAGE = 'fmrismooth')

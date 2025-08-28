@@ -81,6 +81,30 @@ operations.</p>
 <p>This vignette explains how the lattice variant in
 <code>fmrismooth</code> works and how to set its parameters.</p>
 <div class="section level2">
+<h2 id="what-is-a-permutohedral-lattice-and-why-use-it">What is a permutohedral lattice, and why use it?<a class="anchor" aria-label="anchor" href="#what-is-a-permutohedral-lattice-and-why-use-it"></a>
+</h2>
+<p>A bilateral (or joint bilateral) filter performs a Gaussian blur not
+only in space but also in an additional “range” dimension built from
+intensity and other features. Doing an exact Gaussian blur in a
+high‑dimensional feature space on the regular grid is expensive. The
+permutohedral lattice is a sparse, skewed grid that tessellates feature
+space into simplices. It enables an efficient three‑step procedure —
+often called splat → blur → slice:</p>
+<ul>
+<li>splat: project each voxel’s feature vector to the nearest lattice
+simplex and accumulate its value into the simplex vertices;</li>
+<li>blur: run a small fixed‑degree Gaussian-like convolution along
+lattice axes (fast because the lattice is sparse and low‑degree);</li>
+<li>slice: interpolate the blurred lattice values back at the original
+feature locations.</li>
+</ul>
+<p>This gives a very good approximation to a high‑dimensional Gaussian
+blur at a cost that is linear in the number of voxels and roughly linear
+in the feature dimensionality. In practice this makes joint bilateral
+filtering with multiple guides and optional temporal/design features
+fast enough for routine use on fMRI volumes.</p>
+</div>
+<div class="section level2">
 <h2 id="intuition-and-features">Intuition and features<a class="anchor" aria-label="anchor" href="#intuition-and-features"></a>
 </h2>
 <p>Each voxel is represented by a feature vector that always contains

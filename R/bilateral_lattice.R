@@ -6,7 +6,9 @@
 #' @param vol 3D volume array or `NeuroVol`.
 #' @param sigma_sp Spatial sigma (voxels).
 #' @param sigma_r Range sigma(s) for guide intensity dimensions. Scalar or
-#'   vector matching `guide` + `guides` count.
+#'   vector matching `guide` + `guides` count. Has an effect only when a
+#'   guide (or guides) is provided; otherwise the filter is purely spatial
+#'   and `sigma_r` is ignored.
 #' @param guide Optional 3D spatial guide.
 #' @param guides Optional list of additional 3D guides (e.g., probabilities).
 #' @param blur_iters Integer number of lattice blur iterations.
@@ -49,7 +51,10 @@ fast_bilateral_lattice3d <- function(vol,
 #' @param sigma_sp Spatial sigma (voxels).
 #' @param sigma_t Temporal sigma (frames).
 #' @param sigma_r Range sigma(s) for guide intensity dimensions. Scalar or
-#'   vector matching `guide_spatial` + length(`guides`).
+#'   vector matching `guide_spatial` + length(`guides`). Has an effect only
+#'   when `guide_spatial` and/or `guides` are provided; otherwise the filter
+#'   is purely spatial (plus optional temporal/design features) and `sigma_r`
+#'   is ignored.
 #' @param guide_spatial Optional 3D spatial guide.
 #' @param guides Optional list of 3D guides (probability maps, etc.).
 #' @param design Optional numeric vector of length T (frames) for design-aware features.

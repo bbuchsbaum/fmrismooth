@@ -20,7 +20,9 @@ bilat_lattice3d(
 \item{sigma_sp}{Spatial sigma (voxels).}
 
 \item{sigma_r}{Range sigma(s) for guide intensity dimensions. Scalar or
-vector matching `guide` + `guides` count.}
+vector matching `guide` + `guides` count. Has an effect only when a
+guide (or guides) is provided; otherwise the filter is purely spatial
+and `sigma_r` is ignored.}
 
 \item{guide}{Optional 3D spatial guide.}
 

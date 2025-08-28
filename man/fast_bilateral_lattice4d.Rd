@@ -25,7 +25,10 @@ fast_bilateral_lattice4d(
 \item{sigma_t}{Temporal sigma (frames).}
 
 \item{sigma_r}{Range sigma(s) for guide intensity dimensions. Scalar or
-vector matching `guide_spatial` + length(`guides`).}
+vector matching `guide_spatial` + length(`guides`). Has an effect only
+when `guide_spatial` and/or `guides` are provided; otherwise the filter
+is purely spatial (plus optional temporal/design features) and `sigma_r`
+is ignored.}
 
 \item{guide_spatial}{Optional 3D spatial guide.}
 

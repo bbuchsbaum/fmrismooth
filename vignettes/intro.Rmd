@@ -60,7 +60,7 @@ ggplot(viz, aes(x, y, fill = val)) +
   labs(title = "Mid-slice, mid-frame", x = NULL, y = NULL, fill = "intensity")
 ```
 
-The default pipeline estimates spatial/temporal bandwidths and noise scale from the data, then applies design‑aware joint bilateral smoothing across space and time. If you have a T1 or probability maps, pass them as guides; otherwise the spatial mean of the current estimate serves as a weak guide.
+The default pipeline estimates spatial/temporal bandwidths and noise scale from the data, then applies design‑aware joint bilateral smoothing across space and time. If you have a T1 or probability maps, pass them as guides; otherwise the spatial mean of the current estimate serves as a weak guide. Note that range smoothing (`sigma_r`) only has an effect when a guide (or guides) is supplied — without a guide the filter is purely spatial.
 
 ## MP‑PCA + joint bilateral
 

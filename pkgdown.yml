@@ -2,8 +2,14 @@ pandoc: 3.1.11
 pkgdown: 2.1.3
 pkgdown_sha: ~
 articles:
+  bilateral-lattice: bilateral-lattice.html
+  guided-filter: guided-filter.html
   intro: intro.html
-last_built: 2025-08-28T15:12Z
+  mppca: mppca.html
+  robust-tv: robust-tv.html
+  tv-denoising: tv-denoising.html
+  vst: vst.html
+last_built: 2025-08-28T15:33Z
 urls:
   reference: https://bbuchsbaum.github.io/fmrismooth/reference
   article: https://bbuchsbaum.github.io/fmrismooth/articles

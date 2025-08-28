@@ -1,0 +1,83 @@
+---
+title: "Joint Bilateral Smoothing with a Permutohedral Lattice"
+author: "fmrismooth authors"
+date: "`r format(Sys.Date())`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Joint Bilateral Smoothing with a Permutohedral Lattice}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+set.seed(1)
+library(fmrismooth)
+```
+
+The bilateral filter smooths noise while respecting image edges. It does so by averaging neighboring voxels that are close in space and similar in intensity according to a guide image. Implementations based on the permutohedral lattice embed spatial and range features in a high‑dimensional lattice, then perform fast splat–blur–slice operations.
+
+This vignette explains how the lattice variant in `fmrismooth` works and how to set its parameters.
+
+## Intuition and features
+
+Each voxel is represented by a feature vector that always contains spatial coordinates and can include additional components. For 3D filtering, the spatial part is `(x/sigma_sp, y/sigma_sp, z/sigma_sp)`. If you provide a guide volume, its intensity contributes as `g/sigma_r`. Additional guides simply append more intensity features, each scaled by its own `sigma_r` element.
+
+For 4D inputs, you can also add a temporal component `t/sigma_t`, and optionally a design regressor `d_t/sigma_d` for time‑varying effects you want to preserve. Filtering is then an isotropic Gaussian blur in this feature space, projected back to the image grid.
+
+## Parameters and their roles
+
+`sigma_sp` sets how far spatially to average; larger values increase smoothing. `sigma_r` controls how strongly the filter respects intensity edges: small values stop averaging across edges; larger values permit more mixing. In 4D, `sigma_t` couples frames through time; setting it to zero decouples frames. The `design` vector and `sigma_d` create an additional feature that encourages consistency across frames with similar design values.
+
+Internally, `blur_iters` performs repeated lattice blurs to approximate a wider Gaussian. Most use cases need 1–2 iterations.
+
+## 3D example
+
+```{r}
+d3 <- c(12, 12, 12)
+vol <- array(100, dim = d3)
+vol[6:12, , ] <- vol[6:12, , ] + 20                    # a step edge
+noisy3d <- vol + array(rnorm(prod(d3), sd = 6), dim = d3)
+
+out3d_soft  <- bilat_lattice3d(noisy3d, sigma_sp = 2.0, sigma_r = 12)
+out3d_edgey <- bilat_lattice3d(noisy3d, sigma_sp = 2.0, sigma_r = 4)
+
+c(var_noisy   = var(as.vector(noisy3d)),
+  var_soft    = var(as.vector(out3d_soft)),
+  var_edgey   = var(as.vector(out3d_edgey)))
+```
+
+The smaller `sigma_r` preserves edges more aggressively at the cost of less denoising across intensity transitions.
+
+## 4D example with temporal coupling
+
+```{r}
+d4 <- c(10, 10, 10, 16)
+base <- array(100, dim = d4)
+base[6:10, , , ] <- base[6:10, , , ] + 20
+noisy4d <- base + array(rnorm(prod(d4), sd = 5), dim = d4)
+
+out_spat_only <- bilat_lattice4d(noisy4d, sigma_sp = 2.0, sigma_t = 0.0, sigma_r = 10)
+out_spat_temp <- bilat_lattice4d(noisy4d, sigma_sp = 2.0, sigma_t = 0.6, sigma_r = 10)
+
+c(var_spat_only = var(as.vector(out_spat_only)),
+  var_spat_temp = var(as.vector(out_spat_temp)))
+```
+
+Increasing `sigma_t` introduces gentle temporal smoothing that can improve SNR if the signal is temporally coherent.
+
+## Design‑aware features
+
+When you have a regressor (for example, an expected response over time), passing it as `design` adds a feature that keeps frames with similar design values closer in the lattice. This helps denoising without blurring across task‑related changes.
+
+```{r}
+design <- sin(seq(0, 2*pi, length.out = d4[4]))
+out_design <- bilat_lattice4d(noisy4d, sigma_sp = 2.0, sigma_t = 0.4, sigma_r = 10,
+                              design = design, sigma_d = 1.0)
+all.equal(dim(out_design), d4)
+```
+
+## Practical tips
+
+Start with `sigma_sp` around 2–3 voxels and `sigma_r` comparable to the noise scale. Add a small `sigma_t` (0.3–0.8) for 4D data. Use a higher `sigma_r` if you want stronger denoising with some edge rounding, and a lower one if preserving boundaries is critical.
+

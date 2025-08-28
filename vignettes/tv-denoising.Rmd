@@ -1,0 +1,43 @@
+---
+title: "Space–Time Total Variation Denoising"
+author: "fmrismooth authors"
+date: "`r format(Sys.Date())`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Space–Time Total Variation Denoising}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+set.seed(1)
+library(fmrismooth)
+```
+
+Total variation (TV) denoising assumes the underlying image is piecewise smooth and penalizes the sum of absolute gradients. In space–time fMRI, this preserves edges while reducing high‑frequency noise across both spatial and temporal axes.
+
+`fmrismooth` provides a 4D ROF‑type TV model solved by a primal–dual algorithm.
+
+## Parameters and their effects
+
+`lambda_s` controls spatial smoothing; higher values produce flatter regions between edges. `lambda_t` controls temporal smoothing; increasing it enforces consistency across frames. The algorithm step sizes `tau`, `sigma`, and relaxation `theta` are set to robust defaults but can be tuned.
+
+## Example
+
+```{r}
+d4 <- c(10, 10, 10, 12)
+base <- array(100, dim = d4)
+base[6:10, , , ] <- base[6:10, , , ] + 15
+noisy <- base + array(rnorm(prod(d4), sd = 5), dim = d4)
+
+tv_moderate <- tv_denoise4d(noisy, lambda_s = 0.6, lambda_t = 0.2, iters = 20L)
+tv_strong   <- tv_denoise4d(noisy, lambda_s = 0.9, lambda_t = 0.35, iters = 20L)
+
+c(var_noisy   = var(as.vector(noisy)),
+  var_mod     = var(as.vector(tv_moderate)),
+  var_strong  = var(as.vector(tv_strong)))
+```
+
+TV excels when you want aggressive noise reduction with crisp boundaries. If small features are oversmoothed, reduce `lambda_s` and/or `lambda_t`, or try a bilateral or guided filter.
+

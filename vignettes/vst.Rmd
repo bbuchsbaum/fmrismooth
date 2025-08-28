@@ -1,0 +1,51 @@
+---
+title: "Variance–Stabilizing Transform (VST) for Rician Magnitude"
+author: "fmrismooth authors"
+date: "`r format(Sys.Date())`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Variance–Stabilizing Transform (VST) for Rician Magnitude}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+set.seed(1)
+library(fmrismooth)
+```
+
+Magnitude MR data follows a Rician distribution. At moderate SNR, the noise variance depends on the underlying signal, which complicates denoising methods designed for additive Gaussian noise. A simple strategy is to apply a variance–stabilizing transform (VST), denoise under a Gaussian assumption, then invert the transform.
+
+## Forward and inverse transforms
+
+The forward transform maps magnitude `x` to `z = sqrt(max(x^2 - 2*sigma^2, 0))`. The inverse maps back via `x = sqrt(max(z^2 + 2*sigma^2, 0))`. The parameter `sigma` is the noise standard deviation in magnitude units.
+
+```{r}
+x <- array(rexp(100, rate = 1/100), dim = c(5,5,4))
+z <- vst_forward(x, sigma = 2)
+all.equal(dim(z), dim(x))
+xi <- vst_inverse(z, sigma = 2)
+all.equal(dim(xi), dim(x))
+```
+
+## Wrapping a denoiser
+
+The helper `vst_denoise()` applies the forward transform, calls a denoiser you supply, then inverts the transform. When the input is 4D and `sigma` is not supplied, the function estimates it from temporal differences.
+
+```{r}
+d4 <- c(8, 8, 8, 12)
+clean <- array(100, dim = d4)
+noisy <- sqrt((clean + array(rnorm(prod(d4), sd = 2), dim = d4))^2)
+
+out <- vst_denoise(
+  noisy,
+  denoise_fun = function(z) bilat_lattice4d(z, sigma_sp = 2.0, sigma_t = 0.4, sigma_r = 8)
+)
+
+c(var_noisy = var(as.vector(noisy)),
+  var_out   = var(as.vector(out)))
+```
+
+VST is especially helpful when the noise level is not uniform across the image. It can also make parameter choices more stable across different acquisitions.
+

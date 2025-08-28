@@ -1,0 +1,49 @@
+---
+title: "MP–PCA Denoising for fMRI"
+author: "fmrismooth authors"
+date: "`r format(Sys.Date())`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{MP–PCA Denoising for fMRI}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+set.seed(1)
+library(fmrismooth)
+```
+
+Marchenko–Pastur PCA (MP–PCA) exploits low‑rank structure in local space×time patches to separate signal from noise. In fMRI, voxel time series in a small neighborhood often share a low‑dimensional subspace, especially after motion correction.
+
+This vignette explains how to configure the patch size, temporal window, stride, and noise mode.
+
+## How it works
+
+For each overlapping 3D patch and temporal window, the method recenters the data, computes a thin SVD, and retains components whose singular values exceed a noise threshold derived from the Marchenko–Pastur distribution. Reconstructions from all overlapping patches are averaged back on the grid.
+
+## Parameters
+
+`patch` is the spatial patch size; larger patches capture more structure but can oversmooth local details. `tw` is the temporal window; it should be at least a few frames. `stride` sets how densely patches are tiled. `sigma_mode` controls the noise estimate: `"patch"` estimates per‑patch, `"global"` uses one estimate, and `"fixed"` uses a value you provide via `sigma_value`.
+
+## Example
+
+```{r}
+d4 <- c(10, 10, 10, 24)
+clean <- array(100, dim = d4)
+noisy <- clean + array(rnorm(prod(d4), sd = 5), dim = d4)
+
+mp1 <- mppca_denoise4d(noisy, sigma_mode = "global",
+                       patch = c(5L,5L,5L), tw = 24L, stride = c(3L,3L,3L,12L))
+
+mp2 <- mppca_denoise4d(noisy, sigma_mode = "patch",
+                       patch = c(5L,5L,5L), tw = 16L, stride = c(3L,3L,3L,8L))
+
+c(var_noisy = var(as.vector(noisy)),
+  var_mp1   = var(as.vector(mp1)),
+  var_mp2   = var(as.vector(mp2)))
+```
+
+Use denser strides for higher quality at increased cost. Per‑patch noise estimates adapt to local variation but may be less stable on very small windows.
+

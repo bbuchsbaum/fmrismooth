@@ -95,29 +95,89 @@ units.</p>
 <span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="wrapping-a-denoiser">Wrapping a denoiser<a class="anchor" aria-label="anchor" href="#wrapping-a-denoiser"></a>
+<h2 id="wrapping-a-denoiser-how-to-use-with-this-package">Wrapping a denoiser (how to use with this package)<a class="anchor" aria-label="anchor" href="#wrapping-a-denoiser-how-to-use-with-this-package"></a>
 </h2>
-<p>The helper <code><a href="../reference/vst_denoise.html">vst_denoise()</a></code> applies the forward transform,
-calls a denoiser you supply, then inverts the transform. When the input
-is 4D and <code>sigma</code> is not supplied, the function estimates it
-from temporal differences.</p>
+<p><code>vst_denoise(x, sigma, denoise_fun, ...)</code> applies the
+forward transform, calls a denoiser, then inverts. The
+<code>denoise_fun</code> can be any function in this package that
+accepts the data as its first argument and returns an array of the same
+shape. Extra arguments are forwarded via <code>...</code>.</p>
+<p>The most convenient usage is to pass a function directly and supply
+its parameters in <code>...</code>.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">d4</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">8</span>, <span class="fl">8</span>, <span class="fl">8</span>, <span class="fl">12</span><span class="op">)</span></span>
 <span><span class="va">clean</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">100</span>, dim <span class="op">=</span> <span class="va">d4</span><span class="op">)</span></span>
-<span><span class="va">noisy</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="op">(</span><span class="va">clean</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/prod.html" class="external-link">prod</a></span><span class="op">(</span><span class="va">d4</span><span class="op">)</span>, sd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>, dim <span class="op">=</span> <span class="va">d4</span><span class="op">)</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span></span>
+<span><span class="va">noisy</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="op">(</span><span class="va">clean</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/prod.html" class="external-link">prod</a></span><span class="op">(</span><span class="va">d4</span><span class="op">)</span>, sd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>, dim <span class="op">=</span> <span class="va">d4</span><span class="op">)</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span>  <span class="co"># Rician-like</span></span>
 <span></span>
-<span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vst_denoise.html">vst_denoise</a></span><span class="op">(</span></span>
+<span><span class="co"># Use joint bilateral in the Gaussianized (VST) domain</span></span>
+<span><span class="va">out_bilat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vst_denoise.html">vst_denoise</a></span><span class="op">(</span></span>
 <span>  <span class="va">noisy</span>,</span>
-<span>  denoise_fun <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">z</span><span class="op">)</span> <span class="fu"><a href="../reference/bilat_lattice4d.html">bilat_lattice4d</a></span><span class="op">(</span><span class="va">z</span>, sigma_sp <span class="op">=</span> <span class="fl">2.0</span>, sigma_t <span class="op">=</span> <span class="fl">0.4</span>, sigma_r <span class="op">=</span> <span class="fl">8</span><span class="op">)</span></span>
+<span>  denoise_fun <span class="op">=</span> <span class="va">bilat_lattice4d</span>,</span>
+<span>  sigma_sp <span class="op">=</span> <span class="fl">2.0</span>, sigma_t <span class="op">=</span> <span class="fl">0.4</span>, sigma_r <span class="op">=</span> <span class="fl">8</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Or use space–time TV in the VST domain</span></span>
+<span><span class="va">out_tv</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vst_denoise.html">vst_denoise</a></span><span class="op">(</span></span>
+<span>  <span class="va">noisy</span>,</span>
+<span>  denoise_fun <span class="op">=</span> <span class="va">tv_denoise4d</span>,</span>
+<span>  lambda_s <span class="op">=</span> <span class="fl">0.6</span>, lambda_t <span class="op">=</span> <span class="fl">0.2</span>, iters <span class="op">=</span> <span class="fl">20L</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>var_noisy <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">var</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/vector.html" class="external-link">as.vector</a></span><span class="op">(</span><span class="va">noisy</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  var_out   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">var</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/vector.html" class="external-link">as.vector</a></span><span class="op">(</span><span class="va">out</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  var_noisy    var_out </span></span>
-<span><span class="co">#&gt; 3.97367690 0.03625491</span></span></code></pre></div>
-<p>VST is especially helpful when the noise level is not uniform across
-the image. It can also make parameter choices more stable across
-different acquisitions.</p>
+<span>  var_bilat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">var</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/vector.html" class="external-link">as.vector</a></span><span class="op">(</span><span class="va">out_bilat</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  var_tv    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">var</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/vector.html" class="external-link">as.vector</a></span><span class="op">(</span><span class="va">out_tv</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt;  var_noisy  var_bilat     var_tv </span></span>
+<span><span class="co">#&gt; 3.97367690 0.03625491 0.20270265</span></span></code></pre></div>
+<p>You can also pass an anonymous function if you prefer to pre‑bind
+certain arguments:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">out_custom</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vst_denoise.html">vst_denoise</a></span><span class="op">(</span></span>
+<span>  <span class="va">noisy</span>,</span>
+<span>  denoise_fun <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">z</span><span class="op">)</span> <span class="fu"><a href="../reference/bilat_lattice4d.html">bilat_lattice4d</a></span><span class="op">(</span><span class="va">z</span>, sigma_sp <span class="op">=</span> <span class="fl">2.5</span>, sigma_t <span class="op">=</span> <span class="fl">0.5</span>, sigma_r <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">out_custom</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1]  8  8  8 12</span></span></code></pre></div>
+<div class="section level3">
+<h3 id="using-with-pipelines">Using with pipelines<a class="anchor" aria-label="anchor" href="#using-with-pipelines"></a>
+</h3>
+<p>You can wrap end‑to‑end pipelines, but avoid configurations that
+internally estimate a Rician noise sigma from the (VST‑transformed)
+data. For example, prefer explicit parameters over auto‑parameter
+estimation when wrapping pipelines:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># OK: wrap a pipeline you configure explicitly</span></span>
+<span><span class="va">out_ok</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vst_denoise.html">vst_denoise</a></span><span class="op">(</span></span>
+<span>  <span class="va">noisy</span>,</span>
+<span>  denoise_fun <span class="op">=</span> <span class="va">bilat_lattice4d</span>,  <span class="co"># core smoother used in smooth_auto()</span></span>
+<span>  sigma_sp <span class="op">=</span> <span class="fl">2.5</span>, sigma_t <span class="op">=</span> <span class="fl">0.5</span>, sigma_r <span class="op">=</span> <span class="fl">12</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Avoid: wrapping smooth_auto() with auto_params=TRUE will try to</span></span>
+<span><span class="co"># estimate a Rician sigma on VST data. If you do wrap it, set auto_params=FALSE</span></span>
+<span><span class="co"># and pass explicit parameters.</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="d-usage">3D usage<a class="anchor" aria-label="anchor" href="#d-usage"></a>
+</h3>
+<p>For 3D volumes there is no temporal dimension to estimate
+<code>sigma</code> from; you must supply it:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">d3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">10</span>, <span class="fl">10</span><span class="op">)</span></span>
+<span><span class="va">vol</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">100</span>, dim <span class="op">=</span> <span class="va">d3</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/prod.html" class="external-link">prod</a></span><span class="op">(</span><span class="va">d3</span><span class="op">)</span>, sd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>, dim <span class="op">=</span> <span class="va">d3</span><span class="op">)</span></span>
+<span><span class="va">out3d</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vst_denoise.html">vst_denoise</a></span><span class="op">(</span><span class="va">vol</span>, sigma <span class="op">=</span> <span class="fl">2.0</span>, denoise_fun <span class="op">=</span> <span class="va">bilat_lattice3d</span>, sigma_sp <span class="op">=</span> <span class="fl">2.0</span>, sigma_r <span class="op">=</span> <span class="fl">8</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/all.equal.html" class="external-link">all.equal</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">out3d</span><span class="op">)</span>, <span class="va">d3</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="when-to-use-vst">When to use VST<a class="anchor" aria-label="anchor" href="#when-to-use-vst"></a>
+</h3>
+<p>VST is especially helpful when the noise level varies with signal
+intensity (magnitude MR). It can make downstream parameter choices more
+stable and bring the noise closer to additive Gaussian, which is what
+bilateral, guided, TV and MP–PCA assume. For complex‑valued
+reconstructions or already Gaussianized data, you may skip VST and
+denoise directly.</p>
+</div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
